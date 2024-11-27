@@ -1,0 +1,76 @@
+Till now, no existing work details a true gesture-based home automation system that doesn’t require its users to wear additional sensors on their body. We have divided the problem into three major subproblems:
+
+\begin{enumerate}
+	\item Estimating Head Pose (yaw, pitch, roll)
+	\item Detecting Dynamic Hand Gestures
+	\item Finding 3D Coordinates of User’s Head
+\end{enumerate}
+
+We studied the research papers related to these problems, which are detailed below.
+
+\subsection{Head Pose Estimation}
+In the computer vision context, head pose estimation is most commonly interpreted as the ability to infer the orientation of a person’s head relative to the view of a camera.
+At the coarsest level, head pose estimation applies to algorithms that identify a head in one of a few discrete orientations, e.g. a frontal versus left/right profile view. At the fine (i.e., granular) level, a head pose estimate might be a continuous angular measurement across multiple Degrees of Freedom (DoF).
+
+The approaches used in the literature to solve the task of head pose estimation are quite different between them: they have different degrees of automation, different prerequisites and are based on different assumptions. Since head pose estimation has been investigated for a long time, many methods have emerged during this period; however, starting from 2015, methods based on convolutional neural networks have been used more and more, highlighting a shift in methodology, from traditional machine learning (ML) methods towards deep learning (DL) approaches.
+
+\subsubsection{Classical Methods}
+These methods played an important role for HPE but have been either outdated by most recent techniques, or are difficult to integrate with deep learning technology.
+
+\subsubsection{Segmentation-Based Methods}
+These methods address the problem of head pose estimation by exploiting the strong relationship between the head pose and the position of various face parts. The idea is that the performance of the face pose predictor can be improved if a prior efficiently parsed image, having information about various facial features, is provided as input.
+
+The first step is to perform semantic segmentation over the input image either by training a single segmentation model or multiple (discrete) pose specific models. Each model parses the face into different parts (e.g. nose, mouth, eyes, hair) and produces probability maps. Given a new image, the probabilities associated with face parts by the single model or the different pose-specific models are used as the only information for estimating the head pose by using specifically designed algorithms or by training a classifier (e.g. Random Forest, SVMs, etc...).
+
+Khan et al. \cite{khan2020headpose} proposed a simple algorithm to exploit probabilities associated to face parts to predict head pose: first, they run segmentation models for all different poses, obtaining probability maps; then, they consider the maximum of such probabilities to assign a pose to each pixel; finally, they count the total number of pixels associated to each discrete pose and assign to the face image that with the highest number.
+
+The main advantage of these methods is that they are able to exploit the strong relationship between head pose and position of various face parts, which is useful for accurate pose estimation. Moreover, these methods do not require any landmark detection process or face alignment step. Finally, these systems are typically multi-task, they combine HPE, facial expression detection, gender recognition and age classification in a single framework.
+
+A drawback of this technique is only the coarse head pose classification task is addressed by this.
+
+\subsubsection{Landmark-Based Methods}
+These methods first detect the sparse or dense face landmarks, and then estimate the head pose according to these keypoints; they may suffer from high computational costs and inevitable difficulties involving large-angle, partial occlusion or low resolution. Once the detected landmarks are in a form of chaos, the accuracy of head pose will be seriously impaired. Therefore, researchers often avoid utilizing the generated landmarks directly.
+
+Face Direction Estimation based on Mediapipe Landmarks \cite{alnuimi2021facedirection} proposes implementing trigonometric functions to estimate face direction by using detected landmarks using the 3D model of Midiapipe method to achieve high performance with very low error ratio.
+
+landmark-based methods are always inferior to their landmark-free or 3DMM-based counterparts due to its inherent defects.
+
+\subsubsection{Landmark Free}
+Instead of relying on facial landmarks, these methods take well-cropped faces as inputs, and directly regress head pose by training on labeled data.
+
+HopeNet \cite{Chong2018finegrained} firstly proposes a multiloss framework to predict Euler angles from image intensities through joint binned pose classification and regression.  WHENet \cite{whenet2020} extends the narrow-range HPE method HopeNet \cite{Chong2018finegrained} to the full range of yaws. These methods do not perform good performance for MPHPE problems.
+
+DirectMHP \cite{zhou2023directmhp} uses a 1 stage approach for direct end-to-end solution for Multi-Person Head Pose Estimation. Authors chose the cost-effective YOLOv5 as the basic backbone. DirectMHP \cite{zhou2023directmhp} achieves impressive results on full-range MPHPE with good performance.
+
+\subsubsection{3DDM-based}
+In addition to being an independent vision task, HPE can also be attributed as a subtask and included in the regression of 3D Morphable Model (3DMM) parameters, which is originally proposed for the 3D face reconstruction.
+3DDFA \cite{facealign3d2016} proposes a 3D dense face alignment framework by first introducing the 3DMM fitting of BFM \cite{facemodel3d2009} integrated into a cascaded-CNN. It conveniently develops a face profiling method to synthesize abundant training samples to solve the rareness of head pose data. 3DDFA v2 \cite{facealign3d2020} extends it into a more accurate and stable one by proposing a meta-joint optimization strategy.
+
+Although 3DMM-based methods have obtained state-of-the art results on the HPE branch, most of them are limited to a single head with a visible face. And the cost of labeling large scale 3D head ground-truths of arbitrary 2D head images is considerable, which hinders its application in-the-wild.
+
+
+\subsection{Gesture Detection}
+The article \cite{mediapipernn2022signlanguage} used MediaPipe in conjunction with RNN models to address dynamic sign language recognition issues. MediaPipe was employed to determine the location, shape, and orientation by extracting key points of the hands, body, and face. RNN models such as GRU, LSTM, and Bi-directional LSTM addressed the issue of frame dependency in sign movement. For each hand, MediaPipe extracts 21 keypoints. The keypoints are calculated in the 3-D space: X, Y, and Z for both hands. Thus, the number of extracted keypoints for hands is calculated as follows:
+\begin{itemize}
+	\item keypoints in hand $\times$ Three dimensions $\times$ Number of hands = $(21 \times 3 \times 2) = 126$ keypoints
+\end{itemize}
+\textbf{Pros:} Using Mediapipe to locate landmarks, then inputting these landmarks to the LSTM model is a faster approach in contrast to CNN-based architecture.\\
+\textbf{Cons:} Time-consuming: takes 30 frames as input to recognize a hand gesture.
+
+The study in \cite{mediapipe2019hands} introduces MediaPipe Hands, a framework for real-time hand tracking directly on mobile devices. It utilizes machine learning to detect and track 21 3D hand key points from a single camera input, enabling applications like augmented reality (AR) and virtual reality (VR). MediaPipe Hands employs a two-stage pipeline:
+\begin{itemize}
+	\item \textbf{Palm detection:} A lightweight model, BlazePalm, efficiently locates potential hand regions within the image.
+	\item \textbf{Hand landmark prediction:} A more complex model refines the detected hand region and predicts the 3D keypoints of the hand skeleton.
+\end{itemize}
+
+In \cite{mokhar2021gaussian}, Hasan applied multivariate Gaussian distribution to recognize hand gestures using non-geometric features. The input hand image is segmented using two different methods: skin color-based segmentation by applying the HSV color model, and clustering-based thresholding techniques. Several operations are performed to capture the shape of the hand and extract hand features. The modified Direction Analysis Algorithm is adopted to find a relationship between statistical parameters (variance and covariance) from the data, and it is used to compute the object's (hand's) slope and trend by finding the direction of the hand gesture.
+
+
+\subsection{Coordinates of Head in space}
+The study proposed in paper \cite{miguel2014multimodal} introduces inverse perspective mapping, which has been successfully applied to several problems in the field of Intelligent Transportation Systems. In brief, the method consists of mapping images to a new coordinate system where perspective effects are removed. The removal of perspective-associated effects facilitates road and obstacle detection and also assists in free space estimation. The approach used in this paper consists of two stages:
+\begin{itemize}
+	\item Warping an image to a top-down view, removing perspective distortions.
+	\item Useful for tasks such as lane line detection and obstacle identification.
+\end{itemize}
+
+The article \cite{taha2021localization} discusses a novel method for object localization based on camera calibration and pose estimation for computer vision applications. The 3D coordinates are computed from multiple 2D images by camera calibration, including the estimation of intrinsic and extrinsic parameters for lens distortion removal and object size and camera location estimation.
